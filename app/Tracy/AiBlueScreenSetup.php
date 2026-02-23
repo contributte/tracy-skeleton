@@ -28,8 +28,37 @@ final class AiBlueScreenSetup
 		}
 
 		$blueScreen = Debugger::getBlueScreen();
+		$blueScreen->addPanel(fn (?Throwable $exception): ?array => $this->createPolicyPanel($exception));
+
 		$blueScreen->addAction(fn (Throwable $exception): array => $this->createDataAction($exception, 'minimal'));
 		$blueScreen->addAction(fn (Throwable $exception): array => $this->createDataAction($exception, 'sanitized'));
+
+		if (!$this->readBoolConfig('localOnly', true) && is_string($this->config['gatewayUrl'] ?? null)) {
+			$blueScreen->addAction(fn (Throwable $exception): array => $this->createGatewayAction($exception));
+		}
+	}
+
+	/**
+	 * @return array{tab: string, panel: string}|null
+	 */
+	private function createPolicyPanel(?Throwable $exception): ?array
+	{
+		if ($exception === null) {
+			return null;
+		}
+
+		$localOnly = $this->readBoolConfig('localOnly', true);
+		$gatewayConfigured = ($this->config['gatewayUrl'] ?? null) !== null;
+		$gatewayStatus = $localOnly ? 'disabled (local-only mode)' : ($gatewayConfigured ? 'enabled' : 'not configured');
+
+		return [
+			'tab' => 'AI sharing policy',
+			'panel' => sprintf(
+				'<div><p><b>Safe share mode:</b> %s</p><p><b>Gateway:</b> %s</p><p><b>Recommendation:</b> Prefer minimal report, then sanitized report only when needed.</p></div>',
+				$localOnly ? 'local-only (no outbound transfer)' : 'mixed (local + gateway available)',
+				$gatewayStatus,
+			),
+		];
 	}
 
 	/**
@@ -48,6 +77,32 @@ final class AiBlueScreenSetup
 		return [
 			'link' => 'data:text/plain;charset=utf-8;base64,' . rawurlencode(base64_encode($report)),
 			'label' => $label,
+		];
+	}
+
+	/**
+	 * @return array{link: string, label: string}
+	 */
+	private function createGatewayAction(Throwable $exception): array
+	{
+		$gatewayUrl = $this->readStringConfig('gatewayUrl', '');
+		$report = $this->formatSanitizedReport($exception);
+		$payload = base64_encode($report);
+
+		$query = [
+			'source' => 'tracy',
+			'format' => 'sanitized',
+			'payload' => $payload,
+		];
+
+		$gatewaySecret = $this->config['gatewaySecret'] ?? null;
+		if (is_string($gatewaySecret) && $gatewaySecret !== '') {
+			$query['sig'] = hash_hmac('sha256', $payload, $gatewaySecret);
+		}
+
+		return [
+			'link' => rtrim($gatewayUrl, '?') . '?' . http_build_query($query),
+			'label' => 'open internal AI gateway',
 		];
 	}
 

@@ -1,0 +1,10 @@
+parameters:
+	tracyAi:
+		# Switch to false only inside trusted infrastructure.
+		localOnly: true
+
+		# Optional internal gateway endpoint.
+		# gatewayUrl: https://ai-gateway.example.local/import
+		# gatewaySecret: change-me
+
+services:
