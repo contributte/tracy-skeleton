@@ -10,6 +10,8 @@ parameters:
 	tracyAi:
 		enabled: true
 		maxFrames: 8
+		projectRoot: %appDir%/..
+		maxValueLength: 180
 
 # ======================================
 # Extension ============================
