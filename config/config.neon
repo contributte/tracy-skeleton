@@ -1,0 +1,25 @@
+# ======================================
+# Config ===============================
+php:
+	date.timezone: Europe/Prague
+	# session.save_path: %tempDir%/session
+
+# ======================================
+# Parameters ===========================
+parameters:
+	tracyAi:
+		enabled: true
+		maxFrames: 8
+
+# ======================================
+# Extension ============================
+extensions:
+	tracy.bluescreens: Contributte\Tracy\DI\TracyBlueScreensExtension
+
+# ======================================
+# Services =============================
+services:
+	aiBlueScreenSetup:
+		create: App\Tracy\AiBlueScreenSetup(%tracyAi%)
+		setup:
+			- register()
