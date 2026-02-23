@@ -9,6 +9,9 @@ php:
 parameters:
 	tracyAi:
 		enabled: true
+		localOnly: true
+		gatewayUrl: null
+		gatewaySecret: null
 		maxFrames: 8
 		projectRoot: %appDir%/..
 		maxValueLength: 180
